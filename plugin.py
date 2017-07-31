@@ -26,7 +26,14 @@ icons = {
     "batterylevelfull": "batterylevelfull icons.zip",
     "batterylevelok": "batterylevelok icons.zip",
     "batterylevellow": "batterylevellow icons.zip",
-    "batterylevelempty": "batterylevelempty icons.zip"
+    "batterylevelempty": "batterylevelempty icons.zip",
+    "emoblue": "emoblue icons.zip",
+    "emogreen": "emogreen icons.zip",
+    "emoyellow": "emoyellow icons.zip",
+    "emoorange": "emoorange icons.zip",
+    "emored": "emored icons.zip",
+    "emopurple": "emopurple icons.zip",
+    "emoblack": "emoblack icons.zip"
 }
 
 class BasePlugin:
@@ -47,10 +54,12 @@ class BasePlugin:
             Domoticz.Debugging(0)
             
         # load custom battery images
+        Domoticz.Log('icons=%s,Images=%s' % (icons, Images))
         for key, value in icons.items():
             if key not in Images:
-                Domoticz.Image(value).Create()
+                Domoticz.Image(Filename=value).Create()
                 Domoticz.Debug("Added icon: " + key + " from file " + value)
+            Domoticz.Log('Images=%s' % Images.keys())
         Domoticz.Debug("Number of icons loaded = " + str(len(Images)))
         for image in Images:
             Domoticz.Debug("Icon " + str(Images[image].ID) + " " + Images[image].Name)
@@ -121,8 +130,10 @@ class BasePlugin:
                 icon = "batterylevelow"
             else:
                 icon = "batterylevelempty"
+            Domoticz.Log('icon=%s,Images=%s' % (icon, Images))
             try:
                 Devices[3].Update(nValue=0, sValue=str(levelBatt), Image=Images[icon].ID)
+                # Devices[3].Update(nValue=0, sValue=str(levelBatt))
             except:
                 Domoticz.Error("Failed to update device unit " + str(3))
         
@@ -132,13 +143,28 @@ class BasePlugin:
             try:
                 (count, density) = emo.get_haze_value()
                 
+                if density >= 0 and density < 36:
+                    icon = "emoblue"
+                elif density >= 36 and density < 76:
+                    icon = "emogreen"
+                elif density >= 76 and density < 116:
+                    icon = "emoyellow"
+                elif density >=116 and density < 151:
+                    icon = "emoorange" 
+                elif density >=151 and density < 251:
+                    icon = "emored"   
+                elif density >=251 and density < 351:
+                    icon = "emopurple"
+                else:
+                    icon = "emoblack"
+                
                 Domoticz.Log('count = %d' % count)
                 if 1 in Devices:
-                    Devices[1].Update(nValue=0, sValue='%d' % count)
+                    Devices[1].Update(nValue=0, sValue='%d' % count, Image=Images[icon].ID)
             
                 Domoticz.Log('density = %d' % density)
                 if 2 in Devices:
-                    Devices[2].Update(nValue=0, sValue='%d' % density)
+                    Devices[2].Update(nValue=0, sValue='%d' % density, Image=Images[icon].ID)
                 
             finally:
                 emo.disconnect()
@@ -160,7 +186,6 @@ def onHeartbeat():
     global _plugin
     _plugin.onHeartbeat()
 
-
 # Generic helper functions
 def DumpConfigToLog():
     for x in Parameters:
@@ -175,5 +200,3 @@ def DumpConfigToLog():
         Domoticz.Debug("Device sValue:   '" + Devices[x].sValue + "'")
         Domoticz.Debug("Device LastLevel: " + str(Devices[x].LastLevel))
     return
-
-

@@ -21,8 +21,7 @@ class EmoPlus:
             
     def warm_up(self):
         value = self.cmd_ch.read()
-        
-            
+
     def get_haze_value(self):
         
         if self.value_ch.supportsRead():

@@ -6,7 +6,7 @@ Domoticz plugin to read pm2.5 values from Airburg emo plus.
 * Clone this repository
 ```
 $ cd domoticz/plugins
-$ git clone https://github.com/wolfg1969/domoticz-plugin-emo-plus.git airburg
+$ git clone https://github.com/wolfg1969/domoticz-plugin-emo-plus.git AirburgEmoPlus
 ```
 * Install bluepy
 ```
