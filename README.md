@@ -21,3 +21,5 @@ $ cp -R ./bluepy/lib/python3.4/site-packages/bluepy ../
 ```
 $ sudo service domoticz restart
 ```
+
+Battery Level device logic is borrowed from https://www.domoticz.com/wiki/Plugins/BatteryLevel.html
