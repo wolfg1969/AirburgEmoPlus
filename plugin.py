@@ -23,17 +23,17 @@ from emo_plus import EmoPlus
 emo = None
 
 icons = {
-    "batterylevelfull": "batterylevelfull icons.zip",
-    "batterylevelok": "batterylevelok icons.zip",
-    "batterylevellow": "batterylevellow icons.zip",
-    "batterylevelempty": "batterylevelempty icons.zip",
-    "emoblue": "emoblue icons.zip",
-    "emogreen": "emogreen icons.zip",
-    "emoyellow": "emoyellow icons.zip",
-    "emoorange": "emoorange icons.zip",
-    "emored": "emored icons.zip",
-    "emopurple": "emopurple icons.zip",
-    "emoblack": "emoblack icons.zip"
+    "airburgemoplusbatterylevelfull": "batterylevelfull icons.zip",
+    "airburgemoplusbatterylevelok": "batterylevelok icons.zip",
+    "airburgemoplusbatterylevellow": "batterylevellow icons.zip",
+    "airburgemoplusbatterylevelempty": "batterylevelempty icons.zip",
+    "airburgemoplusblue": "emoblue icons.zip",
+    "airburgemoplusgreen": "emogreen icons.zip",
+    "airburgemoyellow": "emoyellow icons.zip",
+    "airburgemoorange": "emoorange icons.zip",
+    "airburgemored": "emored icons.zip",
+    "airburgemopurple": "emopurple icons.zip",
+    "airburgemoblack": "emoblack icons.zip"
 }
 
 class BasePlugin:
@@ -123,13 +123,13 @@ class BasePlugin:
         if 3 in Devices:
             levelBatt = emo.get_battery_level()
             if levelBatt >= 75:
-                icon = "batterylevelfull"
+                icon = "airburgemoplusbatterylevelfull"
             elif levelBatt >= 50:
-                icon = "batterylevelok"
+                icon = "airburgemoplusbatterylevelok"
             elif levelBatt >= 25:
-                icon = "batterylevelow"
+                icon = "airburgemoplusbatterylevellow"
             else:
-                icon = "batterylevelempty"
+                icon = "airburgemoplusbatterylevelempty"
             Domoticz.Log('icon=%s,Images=%s' % (icon, Images))
             try:
                 Devices[3].Update(nValue=0, sValue=str(levelBatt), Image=Images[icon].ID)
@@ -144,27 +144,31 @@ class BasePlugin:
                 (count, density) = emo.get_haze_value()
                 
                 if density >= 0 and density < 36:
-                    icon = "emoblue"
+                    icon = "airburgemoplusblue"
                 elif density >= 36 and density < 76:
-                    icon = "emogreen"
+                    icon = "airburgemoplusgreen"
                 elif density >= 76 and density < 116:
-                    icon = "emoyellow"
+                    icon = "airburgemoplusyellow"
                 elif density >=116 and density < 151:
-                    icon = "emoorange" 
+                    icon = "airburgemoplusorange" 
                 elif density >=151 and density < 251:
-                    icon = "emored"   
+                    icon = "airburgemoplusred"   
                 elif density >=251 and density < 351:
-                    icon = "emopurple"
+                    icon = "airburgemopluspurple"
                 else:
-                    icon = "emoblack"
+                    icon = "airburgemoplusblack"
+                    
+                Domoticz.Log('icon=%s,Images=%s' % (icon, Images))
                 
                 Domoticz.Log('count = %d' % count)
                 if 1 in Devices:
                     Devices[1].Update(nValue=0, sValue='%d' % count, Image=Images[icon].ID)
+                    # Devices[1].Update(nValue=0, sValue='%d' % count)
             
                 Domoticz.Log('density = %d' % density)
                 if 2 in Devices:
                     Devices[2].Update(nValue=0, sValue='%d' % density, Image=Images[icon].ID)
+                    # Devices[2].Update(nValue=0, sValue='%d' % density)
                 
             finally:
                 emo.disconnect()
