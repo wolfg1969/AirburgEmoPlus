@@ -1,4 +1,4 @@
-# domoticz-plugin-emo-plus
+# AirburgEmoPlus
 Domoticz plugin to read pm2.5 values from Airburg emo plus.
 
 ## Installation (Raspberry Pi)
@@ -6,11 +6,11 @@ Domoticz plugin to read pm2.5 values from Airburg emo plus.
 * Clone this repository
 ```
 $ cd domoticz/plugins
-$ git clone https://github.com/wolfg1969/domoticz-plugin-emo-plus.git AirburgEmoPlus
+$ git clone https://github.com/wolfg1969/AirburgEmoPlus.git
 ```
 * Install bluepy
 ```
-$ cd domoticz/plugins/airburg/
+$ cd domoticz/plugins/AirburgEmoPlus/
 $ git clone https://github.com/IanHarvey/bluepy.git bluepy-src
 $ cd bluepy-src
 $ python3 setup.py build
