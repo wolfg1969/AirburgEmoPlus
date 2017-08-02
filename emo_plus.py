@@ -6,26 +6,34 @@ from bluepy import btle
 class EmoPlus:
     
     def __init__(self, addr):
-        self.conn = btle.Peripheral(addr)
-        self.battery_ch = self.conn.getCharacteristics(uuid=btle.UUID('00002a19-0000-1000-8000-00805f9b34fb'))[0]
-        self.value_ch = self.conn.getCharacteristics(uuid=btle.UUID(0xfff2))[0]
-        self.cmd_ch = self.conn.getCharacteristics(uuid=btle.UUID(0xfff3))[0]
+        self.addr = addr
+        self.conn = btle.Peripheral()
+        self.connected = False
+        
+    def connect(self):
+        self.conn.connect(self.addr)
+        self.connected = True
         
     def disconnect(self):
         self.conn.disconnect()
+        self.connected = False
         
     def get_battery_level(self):
-        if self.battery_ch.supportsRead():
-            value = self.battery_ch.read()
+        battery_ch = self.conn.getCharacteristics(uuid=btle.UUID('00002a19-0000-1000-8000-00805f9b34fb'))[0]
+        if battery_ch.supportsRead():
+            value = battery_ch.read()
             return struct.unpack('B', value)[0]
             
     def warm_up(self):
-        value = self.cmd_ch.read()
+        cmd_ch = self.conn.getCharacteristics(uuid=btle.UUID(0xfff3))[0]
+        value = cmd_ch.read()
 
     def get_haze_value(self):
         
-        if self.value_ch.supportsRead():
-            value = self.value_ch.read()
+        value_ch = self.conn.getCharacteristics(uuid=btle.UUID(0xfff2))[0]
+        
+        if value_ch.supportsRead():
+            value = value_ch.read()
             print('value=%s' % binascii.b2a_hex(value))
     
             c1 = bytes(value[10:12])

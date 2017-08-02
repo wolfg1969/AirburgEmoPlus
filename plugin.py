@@ -20,8 +20,6 @@ import Domoticz
 from datetime import datetime, timedelta
 from emo_plus import EmoPlus
 
-emo = None
-
 icons = {
     "airburgemoplusbatterylevelfull": "batterylevelfull icons.zip",
     "airburgemoplusbatterylevelok": "batterylevelok icons.zip",
@@ -36,14 +34,19 @@ icons = {
     "airburgemoblack": "emoblack icons.zip"
 }
 
-class BasePlugin:
+class EmoPlusPlugin:
     
     def __init__(self):
+        
         self.debug = False
-        self.nextwarmup = datetime.now()
-        self.nextreadvalue = datetime.now()
+        
+        self.emoDevice = None
+        
+        self.nextupdate = datetime.now()
+        self.warmupcounter = 0
+        self.startwarmup = False
+        
         self.pollinterval = 30  # default polling interval in minutes
-        self.warmup = 30  # warm up time in seconds
 
     def onStart(self):
         
@@ -54,12 +57,12 @@ class BasePlugin:
             Domoticz.Debugging(0)
             
         # load custom battery images
-        Domoticz.Log('icons=%s,Images=%s' % (icons, Images))
+        Domoticz.Debug('icons=%s,Images=%s' % (icons, Images))
         for key, value in icons.items():
             if key not in Images:
                 Domoticz.Image(Filename=value).Create()
                 Domoticz.Debug("Added icon: " + key + " from file " + value)
-            Domoticz.Log('Images=%s' % Images.keys())
+            Domoticz.Debug('Images=%s' % Images.keys())
         Domoticz.Debug("Number of icons loaded = " + str(len(Images)))
         for image in Images:
             Domoticz.Debug("Icon " + str(Images[image].ID) + " " + Images[image].Name)
@@ -94,34 +97,48 @@ class BasePlugin:
 
     def onHeartbeat(self):
         now = datetime.now()
-        if now >= self.nextwarmup:
-            self.nextwarmup = now + timedelta(minutes=self.pollinterval)
-            self.nextreadvalue = now + timedelta(seconds=self.warmup)
-            Domoticz.Log('warm up')
+        
+        if now >= self.nextupdate:
+            self.nextupdate = now + timedelta(minutes=self.pollinterval)
+            self.startwarmup = True
+            
             self.warmUp()
             self.getBatteryLevel()
             
-        if now >= self.nextreadvalue:
-            self.nextreadvalue = self.nextwarmup + timedelta(seconds=self.warmup)
-            Domoticz.Log('read value')
+        if self.startwarmup:
+            self.warmupcounter += 1
+            
+        if self.warmupcounter > 3:  # 3 * default heartbeat = 30 sec
+        
+            self.startwarmup = False
+            self.warmupcounter = 0
+            
             self.readValue()
+            
                 
     def warmUp(self):
-        global emo
+        Domoticz.Log('warmUp')
+        
         try:
-            emo = EmoPlus(Parameters["Address"])
-            emo.warm_up()
+            if self.emoDevice is None:
+                self.emoDevice = EmoPlus(Parameters["Address"])
+            
+            self.emoDevice.connect()
+            self.emoDevice.warm_up()
             
         except btle.BTLEException as err:
-            Domoticz.Log('error when reading data from Emo Plus %s (error: %s)' % (Parameters["Address"], str(err)))
+            Domoticz.Log('error when warming up Emo Plus %s (error: %s)' % (Parameters["Address"], str(err)))
             emo = None
             
         return True
         
     def getBatteryLevel(self):
-        global emo
-        if 3 in Devices:
-            levelBatt = emo.get_battery_level()
+        
+        Domoticz.Log('getBatteryLevel')
+        
+        if 3 in Devices and self.emoDevice is not None and self.emoDevice.connected:
+            
+            levelBatt = self.emoDevice.get_battery_level()
             if levelBatt >= 75:
                 icon = "airburgemoplusbatterylevelfull"
             elif levelBatt >= 50:
@@ -130,18 +147,25 @@ class BasePlugin:
                 icon = "airburgemoplusbatterylevellow"
             else:
                 icon = "airburgemoplusbatterylevelempty"
-            Domoticz.Log('icon=%s,Images=%s' % (icon, Images))
+                
+            Domoticz.Debug('icon=%s,Images=%s' % (icon, Images))
+            
             try:
-                Devices[3].Update(nValue=0, sValue=str(levelBatt), Image=Images[icon].ID)
-                # Devices[3].Update(nValue=0, sValue=str(levelBatt))
+                if icon in Images:
+                    Devices[3].Update(nValue=0, sValue=str(levelBatt), Image=Images[icon].ID)
+                else:
+                    Domoticz.Debug("icon not found: %s in %s" % (icon, Images))
+                    Devices[3].Update(nValue=0, sValue=str(levelBatt))
             except:
                 Domoticz.Error("Failed to update device unit " + str(3))
         
     def readValue(self):
-        global emo
-        if emo is not None:
+        
+        Domoticz.Log('read value')
+        
+        if self.emoDevice is not None and self.emoDevice.connected:
             try:
-                (count, density) = emo.get_haze_value()
+                (count, density) = self.emoDevice.get_haze_value()
                 
                 if density >= 0 and density < 36:
                     icon = "airburgemoplusblue"
@@ -158,25 +182,30 @@ class BasePlugin:
                 else:
                     icon = "airburgemoplusblack"
                     
-                Domoticz.Log('icon=%s,Images=%s' % (icon, Images))
+                Domoticz.Debug('icon=%s,Images=%s' % (icon, Images))
                 
                 Domoticz.Log('count = %d' % count)
                 if 1 in Devices:
-                    Devices[1].Update(nValue=0, sValue='%d' % count, Image=Images[icon].ID)
-                    # Devices[1].Update(nValue=0, sValue='%d' % count)
+                    if icon in Images:
+                        Devices[1].Update(nValue=0, sValue='%d' % count, Image=Images[icon].ID)
+                    else:
+                        Domoticz.Debug("icon not found: %s in %s" % (icon, Images))
+                        Devices[1].Update(nValue=0, sValue='%d' % count)
             
                 Domoticz.Log('density = %d' % density)
                 if 2 in Devices:
-                    Devices[2].Update(nValue=0, sValue='%d' % density, Image=Images[icon].ID)
-                    # Devices[2].Update(nValue=0, sValue='%d' % density)
+                    if icon in Images:
+                        Devices[2].Update(nValue=0, sValue='%d' % density, Image=Images[icon].ID)
+                    else:
+                        Domoticz.Debug("icon not found: %s in %s" % (icon, Images))
+                        Devices[2].Update(nValue=0, sValue='%d' % density)
                 
             finally:
-                emo.disconnect()
-                emo = None
+                self.emoDevice.disconnect()
 
 
 global _plugin
-_plugin = BasePlugin()
+_plugin = EmoPlusPlugin()
 
 def onStart():
     global _plugin
