@@ -96,24 +96,27 @@ class EmoPlusPlugin:
         Domoticz.Debugging(0)
 
     def onHeartbeat(self):
-        now = datetime.now()
+        try:
+            now = datetime.now()
         
-        if now >= self.nextupdate:
-            self.nextupdate = now + timedelta(minutes=self.pollinterval)
-            self.startwarmup = True
+            if now >= self.nextupdate:
+                self.nextupdate = now + timedelta(minutes=self.pollinterval)
+                self.startwarmup = True
+                
+                self.warmUp()
+                self.getBatteryLevel()
+                
+            if self.startwarmup:
+                self.warmupcounter += 1
+                
+            if self.warmupcounter > 3:  # 3 * default heartbeat = 30 sec
             
-            self.warmUp()
-            self.getBatteryLevel()
-            
-        if self.startwarmup:
-            self.warmupcounter += 1
-            
-        if self.warmupcounter > 3:  # 3 * default heartbeat = 30 sec
-        
-            self.startwarmup = False
-            self.warmupcounter = 0
-            
-            self.readValue()
+                self.startwarmup = False
+                self.warmupcounter = 0
+                
+                self.readValue()
+        except RuntimeError as e:
+            Domoticz.Log('EmoPlus: %s (error: %s)' % (Parameters["Address"], str(e)))
             
                 
     def warmUp(self):
@@ -126,9 +129,9 @@ class EmoPlusPlugin:
             self.emoDevice.connect()
             self.emoDevice.warm_up()
             
-        except btle.BTLEException as err:
-            Domoticz.Log('error when warming up Emo Plus %s (error: %s)' % (Parameters["Address"], str(err)))
+        except RuntimeError as e:
             emo = None
+            raise e
             
         return True
         
