@@ -205,6 +205,7 @@ class EmoPlusPlugin:
                 
             finally:
                 self.emoDevice.disconnect()
+                self.emoDevice = None
 
 
 global _plugin
